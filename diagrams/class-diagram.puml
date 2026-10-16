@@ -1,0 +1,108 @@
+@startuml
+
+class User {
+    - userId: int
+    - fullName: String
+    - email: String
+    - passwordHash: String
+}
+
+class Administrator {
+    - managedVenues: List<Venue>
+    + managesVenue(venue: Venue): boolean
+}
+
+class Player {
+    - bookings: List<Booking>
+}
+
+class Venue {
+    - venueId: int
+    - name: String
+    - address: String
+    + updateDetails(name: String, address: String): void
+    + addPitch(pitch: Pitch): void
+}
+
+class Pitch {
+    - pitchId: int
+    - name: String
+    - surfaceType: String
+    - indoor: boolean
+    - active: boolean
+    + isOpenDuring(start: DateTime, end: DateTime): boolean
+    + calculatePrice(start: DateTime, end: DateTime): Decimal
+    + addOpeningHours(entry: OpeningHoursEntry): void
+    + addPricingTier(tier: PricingTier): void
+    + deactivate(): void
+}
+
+class Booking {
+    - bookingId: int
+    - startTime: DateTime
+    - endTime: DateTime
+    - status: String
+    - totalPrice: Decimal
+    - createdAt: DateTime
+    + overlaps(start: DateTime, end: DateTime): boolean
+    + cancel(now: DateTime): void
+    + confirm(): void
+    + reject(): void
+}
+
+class BookingService {
+    - notifier: Notifier
+    - bookingRepository: BookingRepository
+    + createBooking(player: Player, pitch: Pitch, start: DateTime, end: DateTime): Booking
+    + isAvailable(pitch: Pitch, start: DateTime, end: DateTime): boolean
+    + getUpcomingBookings(player: Player, now: DateTime): List<Booking>
+    + cancelBooking(player: Player, booking: Booking): void
+    + confirmBooking(admin: Administrator, booking: Booking): void
+    + rejectBooking(admin: Administrator, booking: Booking): void
+}
+
+class Notifier {
+    + send(userId: int, message: String): void
+}
+
+class PricingTier {
+    - name: String
+    - applicableDays: List<String>
+    - startTime: Time
+    - endTime: Time
+    - hourlyRate: Decimal
+    + calculateCost(durationMinutes: int): Decimal
+    + appliesTo(day: String, start: Time, end: Time): boolean
+}
+
+class OpeningHoursEntry {
+    - dayOfWeek: String
+    - openingTime: Time
+    - closingTime: Time
+    + covers(day: String, start: Time, end: Time): boolean
+}
+
+class BookingRepository {
+    + save(booking: Booking): void
+    + findByPitch(pitch: Pitch): List<Booking>
+    + findByPlayer(player: Player): List<Booking>
+}
+
+Administrator -u-|> User
+Player -u-|> User
+
+Administrator "1" -- "1..*" Venue : manages
+Venue "1" *-r- "1..*" Pitch : contains
+
+Player "1" -- "0..*" Booking : makes
+Booking "0..*" -- "1" Pitch : reserves
+
+Pitch "1" *-- "0..*" PricingTier
+Pitch "1" *-- "0..*" OpeningHoursEntry
+
+BookingService ..> Booking : uses
+BookingService ..> Pitch : uses
+BookingService "1" -- "1" Notifier : uses
+BookingService --> BookingRepository : uses
+
+@enduml
