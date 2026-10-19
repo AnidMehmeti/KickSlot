@@ -1,6 +1,6 @@
 @startuml
 
-class User {
+abstract class User {
     - userId: int
     - fullName: String
     - email: String
