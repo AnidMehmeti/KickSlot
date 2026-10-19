@@ -1,0 +1,43 @@
+@startuml
+autonumber
+skinparam style strictuml
+skinparam SequenceMessageAlign center
+
+actor "player: Player" as Player
+participant "service: BookingService" as Service
+participant "pitch: Pitch" as Pitch
+participant "newBooking: Booking" as NewBooking
+participant "repo: BookingRepository" as Repo
+
+Player -> Service : createBooking(player, pitch, start, end)
+activate Service
+
+Service -> Pitch : isOpenDuring(start, end)
+activate Pitch
+Pitch --> Service : true
+deactivate Pitch
+
+Service -> Repo : findByPitch(pitch)
+activate Repo
+Repo --> Service : existingBookings: List<Booking>
+deactivate Repo
+
+Service -> Pitch : calculatePrice(start, end)
+activate Pitch
+Pitch --> Service : totalPrice: Decimal
+deactivate Pitch
+
+create NewBooking
+Service -> NewBooking : new(player, pitch, start, end, totalPrice, PENDING)
+activate NewBooking
+NewBooking --> Service : newBooking
+deactivate NewBooking
+
+Service -> Repo : save(newBooking)
+activate Repo
+Repo --> Service : void
+deactivate Repo
+
+Service --> Player : newBooking: Booking
+deactivate Service
+@enduml

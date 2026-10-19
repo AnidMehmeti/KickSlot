@@ -1,0 +1,34 @@
+@startuml
+
+actor "admin: Administrator" as Admin
+participant "service: BookingService" as Service
+participant "booking: Booking" as Booking
+participant "repo: BookingRepository" as Repo
+participant "notifier: Notifier" as Notifier
+
+Admin -> Service : confirmBooking(admin, booking)
+activate Service
+
+Service -> Admin : managesVenue(booking.pitch.venue)
+activate Admin
+Admin --> Service : true
+deactivate Admin
+
+Service -> Booking : confirm()
+activate Booking
+Booking --> Service : void
+deactivate Booking
+
+Service -> Repo : save(booking)
+activate Repo
+Repo --> Service : void
+deactivate Repo
+
+Service -> Notifier : send(booking.player.userId, "Your booking is confirmed!")
+activate Notifier
+Notifier --> Service : void
+deactivate Notifier
+
+Service --> Admin : void
+deactivate Service
+@enduml
