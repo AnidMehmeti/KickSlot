@@ -1,0 +1,20 @@
+@startuml
+autonumber
+skinparam SequenceMessageAlign center
+show footbox
+
+actor "player: Player" as Player
+participant "service: BookingService" as Service
+participant "repo: BookingRepository" as Repo
+
+Player -> Service : getUpcomingBookings(player, now)
+activate Service
+
+Service -> Repo : findByPlayer(player)
+activate Repo
+Repo --> Service : playerBookings: List<Booking>
+deactivate Repo
+
+Service --> Player : upcomingBookings: List<Booking>
+deactivate Service
+@enduml

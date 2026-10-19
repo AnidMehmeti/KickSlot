@@ -1,7 +1,7 @@
 @startuml
 autonumber
-skinparam style strictuml
 skinparam SequenceMessageAlign center
+show footbox
 
 actor "player: Player" as Player
 participant "service: BookingService" as Service
