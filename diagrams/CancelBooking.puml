@@ -1,0 +1,32 @@
+@startuml
+autonumber
+skinparam SequenceMessageAlign center
+show footbox
+
+actor "player: Player" as Player
+participant "service: BookingService" as Service
+participant "booking: Booking" as Booking
+participant "repo: BookingRepository" as Repo
+participant "notifier: Notifier" as Notifier
+
+Player -> Service : cancelBooking(player, booking)
+activate Service
+
+Service -> Booking : cancel(now)
+activate Booking
+Booking --> Service : void
+deactivate Booking
+
+Service -> Repo : save(booking)
+activate Repo
+Repo --> Service : void
+deactivate Repo
+
+Service -> Notifier : send(player.userId, "Your booking is cancelled!")
+activate Notifier
+Notifier --> Service : void
+deactivate Notifier
+
+Service --> Player : void
+deactivate Service
+@enduml

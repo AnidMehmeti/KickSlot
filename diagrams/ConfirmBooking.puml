@@ -1,4 +1,7 @@
 @startuml
+autonumber
+skinparam SequenceMessageAlign center
+show footbox
 
 actor "admin: Administrator" as Admin
 participant "service: BookingService" as Service
