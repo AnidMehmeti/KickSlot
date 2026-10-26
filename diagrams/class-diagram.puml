@@ -33,6 +33,7 @@ class Pitch {
     + isOpenDuring(start: DateTime, end: DateTime): boolean
     + calculatePrice(start: DateTime, end: DateTime): Decimal
     + addOpeningHours(entry: OpeningHoursEntry): void
+    + removeOpeningHours(entry: OpeningHoursEntry): void
     + addPricingTier(tier: PricingTier): void
     + deactivate(): void
 }
@@ -44,6 +45,7 @@ class Booking {
     - status: String
     - totalPrice: Decimal
     - createdAt: DateTime
+    + belongsTo(player: Player): boolean
     + overlaps(start: DateTime, end: DateTime): boolean
     + cancel(now: DateTime): void
     + confirm(): void

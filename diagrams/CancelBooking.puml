@@ -12,6 +12,11 @@ participant "notifier: Notifier" as Notifier
 Player -> Service : cancelBooking(player, booking)
 activate Service
 
+Service -> Booking : belongsTo(player)
+activate Booking
+Booking --> Service : true
+deactivate Booking
+
 Service -> Booking : cancel(now)
 activate Booking
 Booking --> Service : void

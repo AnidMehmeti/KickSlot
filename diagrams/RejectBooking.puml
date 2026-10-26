@@ -26,6 +26,11 @@ activate Repo
 Repo --> Service : void
 deactivate Repo
 
+Service -> Notifier : send(booking.player.userId, "Your booking has been rejected.")
+activate Notifier
+Notifier --> Service : void
+deactivate Notifier
+
 Service --> Admin : void
 deactivate Service
 @enduml
