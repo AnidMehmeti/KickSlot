@@ -1,0 +1,44 @@
+@startuml
+autonumber
+hide footbox
+title Reject a booking
+actor Administrator
+boundary "Administrator page\n[demo now · O2 planned]" as View
+control "BookingController\n[planned O2]" as Controller
+control "BookingService\n[A2]" as Service
+database "BookingRepository\n[A2]" as Repo
+entity "Booking\n[A1]" as Booking
+participant "Current State\n[A1]" as State
+participant "Facility lookup\n[sample now · L/O planned]" as Facilities
+participant "NotificationSender\n[sample now · L3 planned]" as Sender
+Administrator -> View : reject selected booking
+View -> Controller : reject action for bookingId
+Controller -> Service : rejectBooking(currentAdmin, bookingId)
+Service -> Service : require admin role
+Service -> Repo : all()
+Repo --> Service : restored bookings
+Service -> Service : find the booking by ID
+Service -> Facilities : getPitch(booking.pitchId), getVenue(pitch.venueId)
+alt venue.adminId differs from currentAdmin.id
+  Service --> Controller : throw ownership error
+  Controller --> View : display reason
+else authorized
+  Service -> Booking : reject()
+  Booking -> State : reject()
+  alt not Pending
+    State --> Booking : throw transition error
+    Booking --> Service : propagate error
+    Service --> Controller : propagate error
+    Controller --> View : display reason
+  else allowed
+    State --> Booking : new RejectedState
+    Service -> Repo : save(booking)
+    Service -> Sender : send(booking.playerId, message)
+    Service --> Controller : updated booking
+    Controller -> View : refresh list and show result
+  end
+end
+legend bottom
+A1–A3 = implemented. The preview supplies the controller callbacks.
+endlegend
+@enduml

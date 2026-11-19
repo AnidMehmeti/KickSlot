@@ -1,0 +1,31 @@
+@startuml
+autonumber
+hide footbox
+title View upcoming bookings
+actor Player
+boundary "PlayerView\n[A3]" as View
+control "BookingController\n[planned O2]" as Controller
+control "BookingService\n[A2]" as Service
+database "BookingRepository\n[A2]" as Repo
+entity "Booking\n[A1]" as Booking
+participant "Current State\n[A1]" as State
+Player -> Controller : open player screen (preview: select account)
+Controller -> Service : getUpcomingBookings(currentPlayer)
+Service -> Service : require player role and read clock()
+Service -> Repo : all()
+Repo --> Service : bookings restored by Booking.fromJSON(record)
+loop Each booking
+  Service -> Booking : belongsTo(currentPlayer)
+  opt owned and starts in the future
+    Service -> Booking : blocksAvailability()
+    Booking -> State : read blocksAvailability
+  end
+end
+Service -> Service : sort matches by start
+Service --> Controller : upcoming Pending / Confirmed bookings
+Controller -> View : render({pitches, bookings, onRequest, onCancel})
+View --> Player : show dates, stored prices and states or empty list
+legend bottom
+A1–A3 = implemented. The preview supplies the controller callbacks.
+endlegend
+@enduml

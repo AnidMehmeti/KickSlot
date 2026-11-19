@@ -1,0 +1,70 @@
+@startuml
+title KickSlot A0 - refined class overview (all components planned)
+hide empty members
+skinparam classAttributeIconSize 0
+
+class DemoAccount {
+  id
+  name
+  role
+}
+note right of DemoAccount
+  Part 1's Player and Administrator become
+  prepared accounts with role "player" or "admin".
+end note
+
+class BookingService {
+  createBooking(player, pitchId, start, end)
+  getUpcomingBookings(player)
+  getManagedBookings(admin)
+  cancelBooking(player, bookingId)
+  confirmBooking(admin, bookingId)
+  rejectBooking(admin, bookingId)
+}
+class Booking {
+  playerId
+  pitchId
+  start
+  end
+  createdAt
+  totalCents
+  confirm()
+  reject()
+  cancel(now)
+}
+class BookingRepository {
+  all()
+  save(booking)
+}
+PlayerView ..> BookingController : callbacks
+BookingController ..> DemoAccount : current actor
+BookingController --> BookingService : delegates
+BookingService --> BookingRepository
+BookingService ..> Booking : checks owner and requests transition
+Booking "1" --> "1" BookingState : current state
+BookingState <|-- PendingState
+BookingState <|-- ConfirmedState
+BookingState <|-- RejectedState
+BookingState <|-- CancelledState
+
+interface NotificationSender {
+  send(userId, message)
+}
+BookingService --> NotificationSender
+NotificationSender <|.. InAppNotifier
+
+interface FacilityComponent {
+  deactivate()
+}
+FacilityComponent <|.. Venue
+FacilityComponent <|.. Pitch
+Venue "1" *-- "1..*" Pitch : deactivates children
+PitchBuilder ..> Pitch : builds
+Pitch *-- OpeningHoursEntry
+Pitch *-- PricingTier
+BookingService ..> Pitch : checks hours and calculates price
+BookingService ..> Venue : checks activity and manager
+Booking "0..*" --> "1" Pitch : reserves
+DemoAccount "1" -- "0..*" Booking : playerId
+DemoAccount "1" -- "0..*" Venue : adminId
+@enduml

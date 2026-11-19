@@ -1,0 +1,45 @@
+@startuml
+autonumber
+hide footbox
+title Confirm a booking
+actor Administrator
+boundary "Administrator page\n[demo now · O2 planned]" as View
+control "BookingController\n[planned O2]" as Controller
+control "BookingService\n[A2]" as Service
+database "BookingRepository\n[A2]" as Repo
+entity "Booking\n[A1]" as Booking
+participant "Current State\n[A1]" as State
+participant "Facility lookup\n[sample now · L/O planned]" as Facilities
+participant "NotificationSender\n[sample now · L3 planned]" as Sender
+Administrator -> View : confirm selected booking
+View -> Controller : confirm action for bookingId
+Controller -> Service : confirmBooking(currentAdmin, bookingId)
+Service -> Service : require admin role
+Service -> Repo : all()
+Repo --> Service : restored bookings
+Service -> Service : find the booking by ID
+Service -> Facilities : getPitch(booking.pitchId), getVenue(pitch.venueId)
+alt venue.adminId differs from currentAdmin.id
+  Service --> Controller : throw ownership error
+  Controller --> View : display reason
+else authorized
+  Service -> Booking : confirm(now)
+  Booking -> State : confirm(now, start)
+  alt not Pending or confirmation cutoff reached
+    State --> Booking : throw transition error
+    Booking --> Service : propagate error
+    Service --> Controller : propagate error
+    Controller --> View : display reason
+  else allowed
+    State --> Booking : new ConfirmedState
+    Service -> Repo : save(booking)
+    Service -> Sender : send(booking.playerId, message)
+    Service --> Controller : updated booking
+    Controller -> View : refresh list and show result
+  end
+end
+note over Service : The Pending booking already owns its slot.\nNo second availability check.
+legend bottom
+A1–A3 = implemented. The preview supplies the controller callbacks.
+endlegend
+@enduml

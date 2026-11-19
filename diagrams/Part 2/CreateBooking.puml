@@ -1,0 +1,45 @@
+@startuml
+autonumber
+hide footbox
+title Request a booking
+actor Player
+boundary "PlayerView\n[A3]" as View
+control "BookingController\n[planned O2]" as Controller
+control "BookingService\n[A2]" as Service
+participant "Facility lookup\n[sample now · L/O planned]" as Facilities
+participant "Pitch\n[sample now · L1 planned]" as Pitch
+database "BookingRepository\n[A2]" as Repo
+entity "Booking\n[A1]" as Booking
+Player -> View : submit pitch and interval
+View -> Controller : onRequest(pitchId, start, end)
+Controller -> Service : createBooking(currentPlayer, pitchId, start, end)
+Service -> Service : check role, future start and same-day interval
+Service -> Facilities : getPitch(pitchId), getVenue(pitch.venueId)
+Service -> Pitch : isOpenDuring(start, end)
+note right of Service : Both venue and pitch must be active.
+Service -> Repo : all()
+Repo --> Service : restored bookings
+loop Existing bookings on this pitch (stop at first conflict)
+  Service -> Booking : blocksAvailability()
+  opt blocking state
+    Service -> Booking : overlaps(start, end)
+  end
+end
+alt conflicting booking
+  Service --> Controller : throw conflict error
+  Controller --> View : propagate error after refresh
+  View --> Player : display message and retain input
+else slot available
+  Service -> Pitch : calculatePrice(start, end)
+  Pitch --> Service : quoted cents
+  Service -> Booking : new Booking(..., totalCents)
+  note right of Booking : Starts Pending.
+  Service -> Repo : save(booking)
+  Service --> Controller : booking
+  Controller -> View : render refreshed upcoming data
+  View --> Player : show quote, Pending and success message
+end
+legend bottom
+A1–A3 = implemented. The preview supplies the controller callbacks.
+endlegend
+@enduml

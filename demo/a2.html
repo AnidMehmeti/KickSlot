@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KickSlot · Booking preview</title>
+  <style>
+    body { font: 1rem/1.5 system-ui, sans-serif; max-width: 54rem; margin: 2rem auto; padding: 0 1rem; color: #163b32; }
+    form { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
+    form label { display: grid; }
+    input, select, button { padding: .4rem; font: inherit; }
+    button { cursor: pointer; }
+    li { margin-block: .6rem; }
+    [role="status"] { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>KickSlot</h1>
+    <label>Demo account
+      <select id="actor">
+        <option value="p1">Player 1</option>
+        <option value="p2">Player 2</option>
+        <option value="a1">Administrator 1 (manages these pitches)</option>
+        <option value="a2">Administrator 2 (another venue)</option>
+      </select>
+    </label>
+    <p>Daily hours: 17:00–21:00. Grass pitch: €20/hour. Indoor pitch: €30/hour.</p>
+    <section id="player"></section>
+    <section id="admin" hidden>
+      <h2>Bookings I manage</h2>
+      <label>Booking <select id="managed"></select></label>
+      <button id="confirm">Confirm</button>
+      <button id="reject">Reject</button>
+      <p id="admin-result" role="status"></p>
+    </section>
+    <section id="inbox"><h2>My messages</h2><ul id="messages"></ul></section>
+  </main>
+  <script type="module" src="./a2.js"></script>
+</body>
+</html>
