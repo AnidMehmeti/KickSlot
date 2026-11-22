@@ -9,7 +9,7 @@ control "BookingService\n[A2]" as Service
 database "BookingRepository\n[A2]" as Repo
 entity "Booking\n[A1]" as Booking
 participant "Current State\n[A1]" as State
-participant "NotificationSender\n[sample now · L3 planned]" as Sender
+participant "InAppNotifier\n[L3]" as Sender
 Player -> View : cancel selected booking
 View -> Controller : onCancel(bookingId)
 Controller -> Service : cancelBooking(currentPlayer, bookingId)

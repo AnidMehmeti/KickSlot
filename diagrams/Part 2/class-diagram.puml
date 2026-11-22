@@ -50,6 +50,10 @@ BookingState <|-- CancelledState
 interface NotificationSender {
   send(userId, message)
 }
+class InAppNotifier {
+  send(userId, message)
+  forUser(userId)
+}
 BookingService --> NotificationSender
 NotificationSender <|.. InAppNotifier
 

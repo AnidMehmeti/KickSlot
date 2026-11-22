@@ -4,6 +4,8 @@ import { PlayerView } from '../src/booking/PlayerView.js';
 import { PitchRepository } from '../src/pitch/PitchRepository.js';
 import { PitchService } from '../src/pitch/PitchService.js';
 import { PitchForm } from '../src/pitch/PitchForm.js';
+import { InAppNotifier } from '../src/notify/InAppNotifier.js';
+import { InboxView } from '../src/notify/InboxView.js';
 
 const venue = { id: 'venue1', adminId: 'a1', active: true };
 const accounts = {
@@ -32,19 +34,14 @@ if (pitchRepository.all().length === 0) {
   });
 }
 
-const messagesKey = 'kickslot.demo.messages';
-const messages = () => JSON.parse(localStorage.getItem(messagesKey) ?? '[]');
-const sender = {
-  send(userId, message) {
-    localStorage.setItem(messagesKey, JSON.stringify([...messages(), { userId, message }]));
-  }
-};
+const notifier = new InAppNotifier(localStorage, 'kickslot.demo.messages');
 const repository = new BookingRepository(localStorage, 'kickslot.demo.bookings');
-const service = new BookingService(repository, facilities, sender);
+const service = new BookingService(repository, facilities, notifier);
 const field = id => document.getElementById(id);
 const actor = () => accounts[field('actor').value];
 const view = new PlayerView(field('player'));
 const pitchForm = new PitchForm(field('pitch-form'));
+const inbox = new InboxView(field('inbox'));
 
 function refresh() {
   const player = actor().role === 'player';
@@ -65,13 +62,7 @@ function refresh() {
         finally { refresh(); }
       }
     });
-    const mine = messages().filter(m => m.userId === actor().id);
-    const texts = mine.length ? mine.map(m => m.message) : ['No messages.'];
-    field('messages').replaceChildren(...texts.map(text => {
-      const item = document.createElement('li');
-      item.textContent = text;
-      return item;
-    }));
+    inbox.render({ messages: notifier.forUser(actor().id) });
   } else {
     pitchForm.render({
       pitches,

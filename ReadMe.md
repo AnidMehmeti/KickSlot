@@ -25,15 +25,32 @@ view.render({ pitches, bookings, onRequest, onCancel });
 - `onCancel(bookingId)` receives the ID from the clicked row. Its caller calls `service.cancelBooking(player, bookingId)`.
 - Both callbacks run synchronously. The preview refreshes from the service in a `finally` block and lets any error reach the view, which displays its message. Refreshing even after an error matters if a booking was saved before a notification failed.
 
+## Pitch form and inbox
+
+Mount one `PitchForm(rootElement)` and one `InboxView(rootElement)`. Call `render` again when the selected account or the stored data changes. The views do not know who is logged in. The caller passes the current account to the service.
+
+```js
+pitchForm.render({ pitches, onCreate, onUpdate });
+inbox.render({ messages });
+```
+
+- `onCreate(details)` receives `name`, `surface`, `indoor`, `open`, `close`, and `eurosPerHour`. Add the current administrator and `venueId`, then call `pitchService.addPitch(admin, details)`.
+- `onUpdate(pitchId, details)` receives the selected pitch plus `open`, `close`, and `eurosPerHour`. Call `pitchService.updatePitch(admin, pitchId, details)`.
+- `messages` comes from `notifier.forUser(player.id)`. Each item has `userId`, `message`, and `createdAt`.
+- Pass the same `InAppNotifier` to `BookingService` as its sender. Confirm, reject, and cancel call `send(playerId, message)` only after the booking is saved. A denied action does not send.
+
 ## What is stored
 
 | Key | Data |
 | --- | --- |
 | `kickslot.bookings` | Default BookingRepository key. JSON array of records with `id`, `playerId`, `pitchId`, `start`, `end`, `createdAt`, `totalCents`, `stateName`. IDs are strings, timestamps are local minutes, price is an integer. |
 | `kickslot.demo.bookings` | The preview's repository uses the same fields under this separate key. Saving updates by ID. Loading uses `Booking.fromJSON` to restore the State object. |
-| `kickslot.demo.messages` | Preview inbox array containing `{ userId, message }`. The screen shows messages for the selected player. |
+| `kickslot.messages` | Default InAppNotifier key. JSON array of `{ userId, message, createdAt }`. `createdAt` is a local minute. |
+| `kickslot.demo.messages` | The preview uses the same fields under this separate key. The inbox shows the selected player's messages. |
+| `kickslot.pitches` | Default PitchRepository key. |
+| `kickslot.demo.pitches` | The preview stores built pitches under this separate key. |
 
-The two sample pitches, venue and accounts are defined in `demo/a2.js`. Pitch and venue persistence and the real inbox belong to later stages.
+The sample venue and demo accounts stay in `demo/a2.js`. Real venue lookup is still pending.
 
 ## Verification
 
