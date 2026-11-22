@@ -18,12 +18,7 @@
   <main>
     <h1>KickSlot</h1>
     <label>Demo account
-      <select id="actor">
-        <option value="p1">Player 1</option>
-        <option value="p2">Player 2</option>
-        <option value="a1">Administrator 1 (manages these pitches)</option>
-        <option value="a2">Administrator 2 (another venue)</option>
-      </select>
+      <select id="actor"></select>
     </label>
     <p>Seeded hours are 17:00–21:00 every day. Grass starts at €20/hour and indoor at €30/hour.</p>
     <section id="player"></section>
@@ -33,6 +28,7 @@
       <button id="confirm">Confirm</button>
       <button id="reject">Reject</button>
       <p id="admin-result" role="status"></p>
+      <div id="venues"></div>
       <div id="pitch-form"></div>
     </section>
     <section id="inbox"></section>
