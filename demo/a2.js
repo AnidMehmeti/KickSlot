@@ -1,34 +1,36 @@
 import { BookingRepository } from '../src/booking/BookingRepository.js';
 import { BookingService } from '../src/booking/BookingService.js';
 import { PlayerView } from '../src/booking/PlayerView.js';
+import { PitchRepository } from '../src/pitch/PitchRepository.js';
+import { PitchService } from '../src/pitch/PitchService.js';
+import { PitchForm } from '../src/pitch/PitchForm.js';
 
 const venue = { id: 'venue1', adminId: 'a1', active: true };
+const accounts = {
+  p1: { id: 'p1', role: 'player' }, p2: { id: 'p2', role: 'player' },
+  a1: { id: 'a1', role: 'admin' }, a2: { id: 'a2', role: 'admin' }
+};
 
-function samplePitch(id, name, hourlyCents) {
-  return {
-    id, name, venueId: venue.id, active: true,
-    isOpenDuring(start, end) {
-      return start.slice(11) >= '17:00' && end.slice(11) <= '21:00';
-    },
-    calculatePrice(start, end) {
-      const minutes = time => Number(time.slice(11, 13)) * 60 + Number(time.slice(14, 16));
-      return Math.round(hourlyCents * (minutes(end) - minutes(start)) / 60);
-    }
-  };
-}
-
-const pitches = [samplePitch('pitch1', 'Grass pitch', 2000), samplePitch('pitch2', 'Indoor pitch', 3000)];
+const pitchRepository = new PitchRepository(localStorage, 'kickslot.demo.pitches');
 const facilities = {
-  getPitch(id) {
-    const pitch = pitches.find(p => p.id === id);
-    if (!pitch) throw new Error('Pitch not found.');
-    return pitch;
-  },
+  getPitch(id) { return pitchRepository.find(id); },
   getVenue(id) {
     if (id !== venue.id) throw new Error('Venue not found.');
     return venue;
   }
 };
+const pitchService = new PitchService(pitchRepository, facilities);
+
+if (pitchRepository.all().length === 0) {
+  pitchService.addPitch(accounts.a1, {
+    id: 'pitch1', name: 'Grass pitch', venueId: venue.id,
+    surface: 'Grass', indoor: false, open: '17:00', close: '21:00', eurosPerHour: 20
+  });
+  pitchService.addPitch(accounts.a1, {
+    id: 'pitch2', name: 'Indoor pitch', venueId: venue.id,
+    surface: 'Turf', indoor: true, open: '17:00', close: '21:00', eurosPerHour: 30
+  });
+}
 
 const messagesKey = 'kickslot.demo.messages';
 const messages = () => JSON.parse(localStorage.getItem(messagesKey) ?? '[]');
@@ -39,16 +41,14 @@ const sender = {
 };
 const repository = new BookingRepository(localStorage, 'kickslot.demo.bookings');
 const service = new BookingService(repository, facilities, sender);
-const accounts = {
-  p1: { id: 'p1', role: 'player' }, p2: { id: 'p2', role: 'player' },
-  a1: { id: 'a1', role: 'admin' }, a2: { id: 'a2', role: 'admin' }
-};
 const field = id => document.getElementById(id);
 const actor = () => accounts[field('actor').value];
 const view = new PlayerView(field('player'));
+const pitchForm = new PitchForm(field('pitch-form'));
 
 function refresh() {
   const player = actor().role === 'player';
+  const pitches = pitchRepository.all();
   field('player').hidden = !player;
   field('inbox').hidden = !player;
   field('admin').hidden = player;
@@ -73,6 +73,17 @@ function refresh() {
       return item;
     }));
   } else {
+    pitchForm.render({
+      pitches,
+      onCreate(details) {
+        try { pitchService.addPitch(actor(), { ...details, venueId: venue.id }); }
+        finally { refresh(); }
+      },
+      onUpdate(pitchId, details) {
+        try { pitchService.updatePitch(actor(), pitchId, details); }
+        finally { refresh(); }
+      }
+    });
     const bookings = service.getManagedBookings(actor());
     const options = bookings.map(b =>
       new Option(`${facilities.getPitch(b.pitchId).name} · ${b.playerId} · ${b.start} · ${b.stateName}`, b.id)
@@ -97,6 +108,7 @@ field('confirm').onclick = () => decide((admin, id) => service.confirmBooking(ad
 field('reject').onclick = () => decide((admin, id) => service.rejectBooking(admin, id));
 field('actor').onchange = () => {
   view.status.textContent = '';
+  pitchForm.status.textContent = '';
   field('admin-result').textContent = '';
   refresh();
 };
