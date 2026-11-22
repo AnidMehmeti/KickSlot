@@ -10,7 +10,7 @@ database "BookingRepository\n[A2]" as Repo
 entity "Booking\n[A1]" as Booking
 participant "Current State\n[A1]" as State
 participant "Facility lookup\n[sample now · L/O planned]" as Facilities
-participant "NotificationSender\n[sample now · L3 planned]" as Sender
+participant "InAppNotifier\n[L3]" as Sender
 Administrator -> View : confirm selected booking
 View -> Controller : confirm action for bookingId
 Controller -> Service : confirmBooking(currentAdmin, bookingId)
