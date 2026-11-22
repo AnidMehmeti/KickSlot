@@ -28,4 +28,10 @@ export class PitchRepository {
   saveAll(pitches) {
     this.storage.setItem(this.key, JSON.stringify(pitches));
   }
+
+  remove(id) {
+    const pitches = this.all();
+    if (!pitches.some(pitch => pitch.id === id)) throw new Error('Pitch not found.');
+    this.saveAll(pitches.filter(pitch => pitch.id !== id));
+  }
 }

@@ -9,7 +9,12 @@ export class InboxView {
     this.list.replaceChildren(...rows.map(item => {
       const row = document.createElement('li');
       const when = item.createdAt ? `${item.createdAt.replace('T', ' ')} · ` : '';
-      row.textContent = when + item.message;
+      // Display earlier saved booking messages in the same format as new ones.
+      const message = item.message.replace(
+        /(Your booking for )(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}/,
+        '$1$4-$3-$2',
+      );
+      row.textContent = when + message;
       return row;
     }));
   }

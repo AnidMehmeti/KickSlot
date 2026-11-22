@@ -1,9 +1,10 @@
 import { Venue } from './Venue.js';
 
 export class FacilityService {
-  constructor(venues, pitches) {
+  constructor(venues, pitches, bookings) {
     this.venues = venues;
     this.pitches = pitches;
+    this.bookings = bookings;
   }
 
   getVenue(id) { return this.venues.find(id); }
@@ -12,6 +13,45 @@ export class FacilityService {
   getManagedVenues(admin) {
     this.#requireAdmin(admin);
     return this.venues.all().filter(venue => venue.adminId === admin.id);
+  }
+
+  createVenue(admin, details) {
+    this.#requireAdmin(admin);
+    const venue = new Venue({
+      id: crypto.randomUUID(), name: details.name, address: details.address,
+      adminId: admin.id,
+    });
+    this.venues.save(venue);
+    return venue;
+  }
+
+  reactivatePitch(admin, id) {
+    const pitch = this.getPitch(id);
+    const venue = this.getVenue(pitch.venueId);
+    this.#requireOwner(admin, venue);
+    if (!venue.active) throw new Error('Cannot reactivate a pitch in an inactive venue.');
+    pitch.reactivate();
+    this.pitches.save(pitch);
+    return pitch;
+  }
+
+  reactivateVenue(admin, id) {
+    const venue = this.getVenue(id);
+    this.#requireOwner(admin, venue);
+    if (venue.active) return venue;
+    const originalVenue = new Venue(venue.toJSON());
+    venue.reactivate();
+    this.#saveVenueAndPitches(venue, originalVenue);
+    return venue;
+  }
+
+  deletePitch(admin, id) {
+    const pitch = this.getPitch(id);
+    this.#requireOwner(admin, this.getVenue(pitch.venueId));
+    if (this.bookings.all().some(booking => booking.pitchId === id)) {
+      throw new Error('This pitch has booking history. Deactivate it instead.');
+    }
+    this.pitches.remove(id);
   }
 
   updateVenue(admin, id, details) {
@@ -32,18 +72,22 @@ export class FacilityService {
     if (type === 'pitch') {
       this.pitches.save(target);
     } else {
-      const changed = new Map(target.pitches.map(pitch => [pitch.id, pitch]));
-      const pitches = this.pitches.all().map(pitch => changed.get(pitch.id) ?? pitch);
-      this.venues.save(target);
-      try {
-        this.pitches.saveAll(pitches);
-      } catch (error) {
-        // localStorage writes are atomic per key. Restore the first write if the second fails.
-        this.venues.save(originalVenue);
-        throw error;
-      }
+      this.#saveVenueAndPitches(target, originalVenue);
     }
     return target;
+  }
+
+  #saveVenueAndPitches(venue, originalVenue) {
+    const changed = new Map(venue.pitches.map(pitch => [pitch.id, pitch]));
+    const pitches = this.pitches.all().map(pitch => changed.get(pitch.id) ?? pitch);
+    this.venues.save(venue);
+    try {
+      this.pitches.saveAll(pitches);
+    } catch (error) {
+      // Restore the venue if the second localStorage write fails.
+      this.venues.save(originalVenue);
+      throw error;
+    }
   }
 
   #requireAdmin(admin) {

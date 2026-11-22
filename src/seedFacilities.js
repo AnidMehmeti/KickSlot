@@ -1,5 +1,5 @@
-import { Venue } from '../src/venue/Venue.js';
-import { PitchBuilder } from '../src/pitch/PitchBuilder.js';
+import { Venue } from './venue/Venue.js';
+import { PitchBuilder } from './pitch/PitchBuilder.js';
 
 export function seedFacilities(storage, venues, pitches) {
   const newVenues = storage.getItem(venues.key) === null;

@@ -102,7 +102,8 @@ export class BookingService {
 
   #saveAndNotify(booking) {
     this.repository.save(booking);
-    const message = `Your booking for ${booking.start} is ${booking.stateName.toLowerCase()}.`;
+    const [year, month, day] = booking.start.slice(0, 10).split('-');
+    const message = `Your booking for ${day}-${month}-${year} is ${booking.stateName.toLowerCase()}.`;
     try {
       this.sender.send(booking.playerId, message);
     } catch {

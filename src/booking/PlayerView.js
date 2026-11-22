@@ -5,6 +5,7 @@ export class PlayerView {
     root.innerHTML = `
       <h2>Request a pitch</h2>
       <form>
+        <label>Venue <select name="venue" required></select></label>
         <label>Pitch <select name="pitch" required></select></label>
         <label>Start <input name="start" type="datetime-local" required></label>
         <label>End <input name="end" type="datetime-local" required></label>
@@ -18,13 +19,31 @@ export class PlayerView {
     this.list = root.querySelector('ul');
   }
 
-  render({ pitches, bookings, onRequest, onCancel, allPitches = pitches }) {
-    const { pitch, start, end } = this.form.elements;
-    const previous = pitch.value;
-    pitch.replaceChildren(...pitches.map(p => new Option(p.name, p.id)));
-    if (pitches.some(p => p.id === previous)) pitch.value = previous;
-    this.form.querySelector('button').disabled = pitches.length === 0;
-    if (pitches.length === 0) pitch.add(new Option('No pitches available', ''));
+  render({ venues, pitches, bookings, onRequest, onCancel, allPitches = pitches }) {
+    const { venue, pitch, start, end } = this.form.elements;
+    const previousVenue = venue.value;
+    const previousPitch = pitch.value;
+    venue.replaceChildren(new Option('Choose a venue', ''), ...venues.map(v => new Option(v.name, v.id)));
+    venue.disabled = venues.length === 0;
+    if (venues.some(v => v.id === previousVenue)) venue.value = previousVenue;
+    if (venues.length === 0) venue.options[0].text = 'No venues available';
+
+    const showPitches = (selectedId = '') => {
+      const choices = pitches.filter(p => p.venueId === venue.value);
+      const prompt = !venue.value ? 'Choose a venue first' : choices.length ? 'Choose a pitch' : 'No pitches available';
+      pitch.replaceChildren(new Option(prompt, ''), ...choices.map(p => new Option(p.name, p.id)));
+      pitch.disabled = choices.length === 0;
+      if (choices.some(p => p.id === selectedId)) pitch.value = selectedId;
+      this.form.querySelector('button').disabled = !pitch.value;
+    };
+    showPitches(previousPitch);
+    venue.onchange = () => {
+      this.status.textContent = '';
+      showPitches();
+    };
+    pitch.onchange = () => {
+      this.form.querySelector('button').disabled = !pitch.value;
+    };
 
     this.form.onsubmit = event => {
       event.preventDefault();

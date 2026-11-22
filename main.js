@@ -12,17 +12,17 @@ import { DemoSession } from './src/account/DemoSession.js';
 import { VenueRepository } from './src/venue/VenueRepository.js';
 import { FacilityService } from './src/venue/FacilityService.js';
 import { VenueView } from './src/venue/VenueView.js';
-import { seedFacilities } from './demo/seedFacilities.js';
+import { seedFacilities } from './src/seedFacilities.js';
 
 function startApp() {
   const field = id => document.getElementById(id);
   const pitches = new PitchRepository(localStorage);
   const venues = new VenueRepository(localStorage, pitches);
   seedFacilities(localStorage, venues, pitches);
-  const facilities = new FacilityService(venues, pitches);
+  const bookings = new BookingRepository(localStorage);
+  const facilities = new FacilityService(venues, pitches, bookings);
   const pitchService = new PitchService(pitches, facilities);
   const notifier = new InAppNotifier(localStorage);
-  const bookings = new BookingRepository(localStorage);
   const service = new BookingService(bookings, facilities, notifier);
   const session = new DemoSession(localStorage);
   const playerView = new PlayerView(field('player'));
@@ -63,6 +63,7 @@ function startApp() {
     field('admin').hidden = isPlayer;
     if (isPlayer) {
       playerView.render({
+        venues: allVenues.filter(venue => venue.active),
         pitches: allPitches.filter(pitch => pitch.active && allVenues.some(venue => venue.id === pitch.venueId && venue.active)),
         allPitches,
         bookings: service.getUpcomingBookings(actor),
@@ -88,6 +89,12 @@ function startApp() {
     venueView.render({
       venues: managedVenues,
       selectedId: selectedVenueId,
+      onCreate: details => changeFacility(() => {
+        const created = facilities.createVenue(session.current(), details);
+        selectedVenueId = created.id;
+        pitchForm.form.reset();
+        pitchForm.status.textContent = '';
+      }),
       onSelect(id) {
         selectedVenueId = id;
         venueView.status.textContent = '';
@@ -96,6 +103,9 @@ function startApp() {
       },
       onUpdate: (id, details) => changeFacility(() => facilities.updateVenue(session.current(), id, details)),
       onDeactivate: (type, id) => changeFacility(() => facilities.deactivate(session.current(), type, id)),
+      onReactivateVenue: id => changeFacility(() => facilities.reactivateVenue(session.current(), id)),
+      onReactivatePitch: id => changeFacility(() => facilities.reactivatePitch(session.current(), id)),
+      onDeletePitch: id => changeFacility(() => facilities.deletePitch(session.current(), id)),
     });
     field('pitch-form').hidden = !venue?.active;
     pitchForm.render({

@@ -165,6 +165,10 @@ export class Pitch {
     this.active = false;
   }
 
+  reactivate() {
+    this.active = true;
+  }
+
   toJSON() {
     return {
       id: this.id,

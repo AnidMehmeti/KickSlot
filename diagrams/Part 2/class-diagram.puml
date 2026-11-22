@@ -59,10 +59,41 @@ NotificationSender <|.. InAppNotifier
 
 interface FacilityComponent {
   deactivate()
+  reactivate()
 }
 FacilityComponent <|.. Venue
 FacilityComponent <|.. Pitch
-Venue "1" *-- "1..*" Pitch : deactivates children
+class Venue {
+  deactivate()
+  reactivate()
+}
+class Pitch {
+  deactivate()
+  reactivate()
+}
+class FacilityService {
+  createVenue(admin, details)
+  reactivatePitch(admin, pitchId)
+  reactivateVenue(admin, venueId)
+  deletePitch(admin, pitchId)
+  deactivate(admin, type, id)
+}
+class VenueRepository {
+  all()
+  find(id)
+  save(venue)
+}
+class PitchRepository {
+  all()
+  find(id)
+  save(pitch)
+  remove(id)
+}
+VenueView ..> FacilityService : callbacks from main.js
+FacilityService --> VenueRepository
+FacilityService --> PitchRepository
+FacilityService --> BookingRepository : checks history before deletion
+Venue "1" *-- "0..*" Pitch : deactivates children
 PitchBuilder ..> Pitch : builds
 Pitch *-- OpeningHoursEntry
 Pitch *-- PricingTier

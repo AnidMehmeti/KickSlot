@@ -21,6 +21,11 @@ export class Venue {
     for (const pitch of this.pitches) pitch.deactivate();
   }
 
+  reactivate() {
+    this.active = true;
+    for (const pitch of this.pitches) pitch.reactivate();
+  }
+
   toJSON() {
     return {
       id: this.id, name: this.name, address: this.address,
