@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KickSlot · Pitch builder</title>
+  <style>
+    body { font: 1rem/1.5 system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; color: #163b32; }
+    li { margin-block: .4rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Pitch builder check</h1>
+    <ul id="out"></ul>
+  </main>
+  <script type="module">
+    import { Pitch } from '../src/pitch/Pitch.js';
+    import { PitchBuilder } from '../src/pitch/PitchBuilder.js';
+
+    const out = document.getElementById('out');
+    const line = text => {
+      const item = document.createElement('li');
+      item.textContent = text;
+      out.append(item);
+    };
+
+    const monday = '2026-11-23';
+    const pitch = new PitchBuilder()
+      .withName('Grass pitch')
+      .withVenue('venue1')
+      .withSurface('Grass')
+      .withIndoor(false)
+      .addHours('Monday', '17:00', '21:00')
+      .addTier('Monday', '17:00', '21:00', 2000)
+      .build();
+
+    const cents = pitch.calculatePrice(monday + 'T18:00', monday + 'T19:30');
+    line(`90 minutes at €20/hour: ${cents} cents (expect 3000). Open: ${pitch.isOpenDuring(monday + 'T18:00', monday + 'T19:30')}.`);
+
+    const saved = Pitch.fromJSON(JSON.parse(JSON.stringify(pitch)));
+    line(`Saved pitch keeps id ${saved.id === pitch.id}, hours ${saved.hours.length}, tiers ${saved.tiers.length}, active ${saved.active}.`);
+    saved.deactivate();
+    line(`After deactivate, active is ${saved.active}.`);
+
+    try {
+      new PitchBuilder()
+        .withName('Overlap')
+        .withVenue('venue1')
+        .withSurface('Grass')
+        .withIndoor(false)
+        .addHours('Monday', '17:00', '21:00')
+        .addTier('Monday', '17:00', '19:00', 2000)
+        .addTier('Monday', '18:00', '21:00', 2500)
+        .build();
+      line('Overlapping tiers were accepted.');
+    } catch (error) {
+      line('Overlapping tiers rejected: ' + error.message);
+    }
+  </script>
+</body>
+</html>
