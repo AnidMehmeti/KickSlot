@@ -22,6 +22,10 @@ export class PitchRepository {
     const index = pitches.findIndex((item) => item.id === pitch.id);
     if (index === -1) pitches.push(pitch);
     else pitches[index] = pitch;
+    this.saveAll(pitches);
+  }
+
+  saveAll(pitches) {
     this.storage.setItem(this.key, JSON.stringify(pitches));
   }
 }

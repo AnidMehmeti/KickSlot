@@ -1,29 +1,43 @@
 # KickSlot
 
-A player requests a football pitch and the venue administrator decides the request. This checkout runs as a single-tab browser demo with prepared accounts, two sample pitches and localStorage on the current browser origin. Switching demo accounts models roles and ownership. Secure sign-in and scheduling across devices are outside this version.
+A player requests a football pitch and the venue administrator decides the request. This checkout runs as a single-tab browser demo with two players, two administrators, two venues and three seeded pitches. Data is saved in localStorage on the current browser origin. Switching demo accounts models roles and ownership. Secure sign-in and scheduling across devices or tabs are outside this version.
 
-## Open the preview
+## Open the app
 
-In VS Code, open the repository folder, right-click `demo/a2.html` and choose **Open with Live Server**. Use the same host and port when checking persistence. No package installation is needed.
+In VS Code, open the repository folder, right-click the root `index.html` and choose **Open with Live Server**. Use the same host and port when checking persistence. The app uses native JavaScript modules and requires no package installation. The earlier preview remains at `demo/a2.html` with separate storage.
+
+| Demo account | ID | Access |
+| --- | --- | --- |
+| Player 1 | `p1` | Own bookings and inbox |
+| Player 2 | `p2` | Own bookings and inbox |
+| Administrator 1 | `a1` | Trepca Sports Centre, Grass and Indoor pitches |
+| Administrator 2 | `a2` | Riverside Sports Centre and Riverside pitch |
+
+Seeded pitches open 17:00–21:00 every day. Grass and Riverside start at €20/hour, and Indoor starts at €30/hour. The configuration form applies one opening interval and a whole-euro hourly rate to every weekday. PitchBuilder also supports individual weekday entries and rates in whole cents.
 
 1. As Player 1, select a pitch. The default interval is tomorrow, 18:00–19:30. Grass costs €30 for 90 minutes, indoor costs €45. Request the slot and check the stored price and Pending state.
 2. Submit it again. The conflict message appears and the original form values stay in place. Player 2 has a separate list.
-3. Switch to Administrator 1, select the booking, and confirm it. Switch back to Player 1 and refresh. The list shows Confirmed and the inbox contains the decision.
+3. Switch to Administrator 1 and confirm the booking in the list. Switch back to Player 1 and refresh. The list shows Confirmed and the inbox contains the decision.
 4. Click Cancel on that row. It disappears from upcoming bookings, and requesting the same slot succeeds again. A request before 17:00 displays the opening-hours error.
+5. Request a separate slot and reject it as the managing administrator. Check the owning player's inbox. Administrator 2 sees bookings only for Riverside.
+6. As Administrator 1, select Grass in the pitch configuration form and save a new hourly rate. Existing booking totals stay fixed. A new request uses the new rate. Choose New pitch to create an additional pitch.
+7. Edit the venue name or address, deactivate one pitch, then deactivate the venue. Reload. The venue and all its pitches stay inactive, existing bookings remain, and normal decisions and cancellations still apply. Riverside remains available.
+
+Deactivation persists. Run the walkthrough in a fresh browser profile or private window if you want to start with the seeded facilities again.
 
 ## Player view and callbacks
 
 Construct one `PlayerView(rootElement)` inside a player screen. Call the following each time the selected player or their booking data changes:
 
 ```js
-view.render({ pitches, bookings, onRequest, onCancel });
+view.render({ pitches, allPitches, bookings, onRequest, onCancel });
 ```
 
-- `pitches` supplies selectable objects with string `id` and display `name`. If a booked pitch is no longer selectable, its row falls back to its stored pitch ID. An empty pitch list disables requesting.
+- `pitches` supplies active, selectable objects with string `id` and display `name`. `allPitches` includes inactive pitches so existing bookings keep their display names. It defaults to `pitches` for earlier callers. An empty selectable list disables requesting.
 - `bookings` comes from `service.getUpcomingBookings(currentPlayer)`. Each row uses `id`, `pitchId`, `start`, `end`, `totalCents` and `stateName`. The view formats the saved cents as euros.
-- `onRequest(pitchId, start, end)` receives the selected ID and local minute strings in `YYYY-MM-DDTHH:mm` format. Its caller supplies the current player to `service.createBooking(player, pitchId, start, end)`.
-- `onCancel(bookingId)` receives the ID from the clicked row. Its caller calls `service.cancelBooking(player, bookingId)`.
-- Both callbacks run synchronously. The preview refreshes from the service in a `finally` block and lets any error reach the view, which displays its message. Refreshing even after an error matters if a booking was saved before a notification failed.
+- `onRequest(pitchId, start, end)` receives the selected ID and local minute strings in `YYYY-MM-DDTHH:mm` format. It calls `BookingController.request`, which gets the current player from DemoSession and delegates to BookingService.
+- `onCancel(bookingId)` calls `BookingController.cancel`. The administrator view uses the controller's `confirm` and `reject` methods.
+- Controller actions run synchronously and refresh from the service in a `finally` block. Errors reach the view for display. This also refreshes a saved decision when notification delivery fails.
 
 ## Pitch form and inbox
 
@@ -37,7 +51,7 @@ inbox.render({ messages });
 - `onCreate(details)` receives `name`, `surface`, `indoor`, `open`, `close`, and `eurosPerHour`. Add the current administrator and `venueId`, then call `pitchService.addPitch(admin, details)`.
 - `onUpdate(pitchId, details)` receives the selected pitch plus `open`, `close`, and `eurosPerHour`. Call `pitchService.updatePitch(admin, pitchId, details)`.
 - `messages` comes from `notifier.forUser(player.id)`. Each item has `userId`, `message`, and `createdAt`.
-- Pass the same `InAppNotifier` to `BookingService` as its sender. Confirm, reject, and cancel call `send(playerId, message)` only after the booking is saved. A denied action does not send.
+- `InAppNotifier` implements the `NotificationSender.send(userId, message)` contract and is injected into BookingService. Confirm, reject, and cancel send only after the booking is saved. A denied action does not send.
 
 ## What is stored
 
@@ -49,23 +63,22 @@ inbox.render({ messages });
 | `kickslot.demo.messages` | The preview uses the same fields under this separate key. The inbox shows the selected player's messages. |
 | `kickslot.pitches` | Default PitchRepository key. |
 | `kickslot.demo.pitches` | The preview stores built pitches under this separate key. |
+| `kickslot.venues` | Venue ID, name, address, administrator ID and active flag. Children are loaded from pitches by `venueId`. |
+| `kickslot.account` | Selected demo account ID, restored after reload. |
+| `kickslot.demo.venues`, `kickslot.demo.account` | Venue and account storage for the earlier preview. |
 
-The sample venue and demo accounts stay in `demo/a2.js`. Real venue lookup is still pending.
+The root app uses the default repository keys. `main.js` constructs the repositories, services, session, controller and views. Shared initialization in `demo/seedFacilities.js` builds the seed pitches and adds venues when their storage is first created. Reloading preserves edits and deactivation. Existing preview pitch records retain their IDs and configuration when venues are introduced.
 
 ## Verification
 
-The browser walkthrough above is available through Live Server. Anid's optional A1 suite can also run with Node 22 from the repository root. With the previously supplied A1 file at `tests/booking.test.js`, run:
+Direct module checks passed for controller requests and decisions, stored prices, overlap and adjacency, permissions, final states, cancellation at the start time, inbox recipients, persistence, repeated seeding, venue deactivation and refresh after notification failure. Additional checks covered duplicate pitch IDs, malformed opening times and overlapping price tiers.
 
-```sh
-node --experimental-default-type=module --test tests/booking.test.js
-```
+The venue preview was checked in the browser for account switching, venue editing, pitch and venue deactivation, persistence, and confirmation/cancellation of an existing booking after deactivation. The root app's full browser walkthrough is still pending. Follow the steps above through Live Server before the final demonstration.
 
-A3 verification used the team's current booking modules with that suite. All 22 tests passed. The player preview was exercised in a browser for requests, conflicts, role-specific lists, confirmation, persistence after reload, cancellation, rejection, notifications and slot reuse. All five refined sequence diagrams passed a PlantUML syntax check.
+## Design and handoff
 
-## Where the handoff starts
+Booking delegates transitions to Pending, Confirmed, Cancelled and Rejected State objects. BookingService checks the current actor, ownership, time, availability and price before saving. PitchBuilder validates pitch configuration before construction.
 
-**Olti (L1).** Start with the existing `BookingService(repository, facilities, sender)`. Replace the two sample pitches with built pitches that expose `id`, `name`, `venueId`, `active`, `isOpenDuring(start, end)` and `calculatePrice(start, end)`. Return whole cents for a single applicable tier and throw for an interval without a covering tier. Implement the sender's synchronous `send(userId, message)`. Keep the preview's simple venue while your work is in progress.
+Venue is the Composite and Pitch is its leaf. FacilityService checks ownership and calls `target.deactivate()` for either type. Venue forwards that operation to its loaded pitches, and FacilityService persists the affected records. BookingController obtains the current account and delegates booking actions to BookingService. NotificationSender supplies the small contract for the injected inbox sender.
 
-**Orges (O1–O3).** Supply the real venue lookup, Composite deactivation and demo-session account. Connect BookingController using the two player callbacks above. The account comes from the current session. The controller refreshes the view, while BookingService retains permission checks and orchestration and Booking retains State transitions.
-
-**UML.** Original sequences remain under `diagrams/Part 1/`. The current A0 class overview is in `diagrams/Part 2/class-diagram.puml`. The five refined sequence sources are in `docs/uml/refined/`. They distinguish the working A1–A3 operations, preview substitutes, and planned integrations. Orges checks the final versions against the complete app after the last integration.
+Original diagrams are in `diagrams/Part 1/`. Earlier Part 2 diagrams are in `diagrams/Part 2/`. Final UML comparison and the report remain submission tasks.

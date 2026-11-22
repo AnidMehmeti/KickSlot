@@ -1,3 +1,5 @@
+import { NotificationSender } from './NotificationSender.js';
+
 function localMinute() {
   const now = new Date();
   const pad = value => String(value).padStart(2, '0');
@@ -5,8 +7,9 @@ function localMinute() {
   return day + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
 }
 
-export class InAppNotifier {
+export class InAppNotifier extends NotificationSender {
   constructor(storage, key = 'kickslot.messages') {
+    super();
     this.storage = storage;
     this.key = key;
   }
