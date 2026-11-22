@@ -14,7 +14,7 @@ export class PitchForm {
         <button type="submit">Create pitch</button>
         <button type="button" name="save">Save hours and rate</button>
       </form>
-      <p role="status"></p>`;
+      <p role="status" aria-live="polite"></p>`;
     this.form = root.querySelector('form');
     this.status = root.querySelector('[role="status"]');
   }
@@ -31,6 +31,8 @@ export class PitchForm {
     const showSelected = () => {
       const selected = pitches.find((item) => item.id === pitch.value);
       save.disabled = !selected;
+      this.form.querySelector('[type="submit"]').disabled = Boolean(selected);
+      name.disabled = surface.disabled = indoor.disabled = Boolean(selected);
       if (!selected) return;
       name.value = selected.name;
       surface.value = selected.surface;
@@ -39,7 +41,11 @@ export class PitchForm {
       close.value = selected.hours[0].close;
       euros.value = String(selected.tiers[0].hourlyCents / 100);
     };
-    pitch.onchange = showSelected;
+    pitch.onchange = () => {
+      if (!pitch.value) this.form.reset();
+      this.status.textContent = '';
+      showSelected();
+    };
     showSelected();
 
     const schedule = () => ({

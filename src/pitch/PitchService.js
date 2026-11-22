@@ -28,8 +28,8 @@ function centsFromEuros(euros) {
 }
 
 function sameEveryDay(fields) {
-  const open = String(fields.open ?? '').slice(0, 5);
-  const close = String(fields.close ?? '').slice(0, 5);
+  const open = fields.open;
+  const close = fields.close;
   const hourlyCents = centsFromEuros(fields.eurosPerHour);
   const builder = new PitchBuilder()
     .withId(fields.id)
@@ -53,6 +53,9 @@ export class PitchService {
   addPitch(admin, fields) {
     this.#allowed(admin, fields.venueId);
     const pitch = sameEveryDay({ ...fields, active: true });
+    if (this.repository.all().some(existing => existing.id === pitch.id)) {
+      throw new Error('A pitch with this ID already exists.');
+    }
     this.repository.save(pitch);
     return pitch;
   }
