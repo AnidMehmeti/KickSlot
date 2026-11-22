@@ -18,7 +18,7 @@ export class PlayerView {
     this.list = root.querySelector('ul');
   }
 
-  render({ pitches, bookings, onRequest, onCancel }) {
+  render({ pitches, bookings, onRequest, onCancel, allPitches = pitches }) {
     const { pitch, start, end } = this.form.elements;
     const previous = pitch.value;
     pitch.replaceChildren(...pitches.map(p => new Option(p.name, p.id)));
@@ -38,7 +38,7 @@ export class PlayerView {
       this.list.append(empty);
     }
     for (const booking of bookings) {
-      const name = pitches.find(p => p.id === booking.pitchId)?.name ?? booking.pitchId;
+      const name = allPitches.find(p => p.id === booking.pitchId)?.name ?? booking.pitchId;
       const row = document.createElement('li');
       row.textContent = `${name} · ${booking.start.replace('T', ' ')}–${booking.end.slice(11)} · ${euros.format(booking.totalCents / 100)} · ${booking.stateName} `;
       const cancel = document.createElement('button');

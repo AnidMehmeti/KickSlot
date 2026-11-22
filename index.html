@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KickSlot</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>KickSlot</h1>
+      <label>Demo account <select id="actor"></select></label>
+    </header>
+    <p>Switch accounts to request a pitch or manage your venue’s bookings.</p>
+    <p id="app-result" role="alert"></p>
+    <section id="player"></section>
+    <section id="inbox"></section>
+    <section id="admin" hidden>
+      <div id="managed-bookings"></div>
+      <div id="venues"></div>
+      <div id="pitch-form"></div>
+    </section>
+  </main>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
